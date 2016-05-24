@@ -27,6 +27,11 @@
 #define MSG_TRUNC      0x20
 #endif /* MSG_TRUNC */
 
+/* TODO - Temporary definitions, need to refine. */
+#ifndef AF_MPLS
+#define AF_MPLS 28
+#endif
+
 #include "linklist.h"
 #include "if.h"
 #include "log.h"

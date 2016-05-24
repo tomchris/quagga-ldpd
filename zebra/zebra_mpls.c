@@ -733,7 +733,6 @@ nhlfe_del (zebra_nhlfe_t *nhlfe)
     nhlfe->prev->next = nhlfe->next;
   else
     lsp->nhlfe_list = nhlfe->next;
-  nhlfe->prev = nhlfe->next = NULL;
 
   XFREE (MTYPE_NHLFE, nhlfe);
 
@@ -1324,9 +1323,9 @@ mpls_label2str (u_int8_t num_labels, mpls_label_t *labels,
 {
   buf[0] = '\0';
   if (num_labels == 1)
-    snprintf (buf, len, "%d", labels[0]);
+    snprintf (buf, len, "%u", labels[0]);
   else if (num_labels == 2)
-    snprintf (buf, len, "%d/%d", labels[0], labels[1]);
+    snprintf (buf, len, "%u/%u", labels[0], labels[1]);
   return buf;
 }
 

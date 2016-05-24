@@ -1412,7 +1412,7 @@ zebra_mpls_transit_lsp (struct vty *vty, int add_cmd, const char *inlabel_str,
 
   if (outlabel_str)
     {
-      if (!strcmp(outlabel_str, "implicit-null"))
+      if (outlabel_str[0] == 'i')
         out_label = MPLS_IMP_NULL_LABEL;
       else
         out_label = atoi(outlabel_str);

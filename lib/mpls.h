@@ -77,12 +77,6 @@ typedef unsigned int mpls_label_t;
 
 #define MPLS_INVALID_LABEL                 0xFFFFFFFF
 
-
-/* TODO - Temporary definitions, need to refine. */
-#ifndef AF_MPLS
-#define AF_MPLS 28
-#endif
-
 /* Functions for basic label operations. */
 
 /* Encode a label stack entry from fields; convert to network byte-order as
