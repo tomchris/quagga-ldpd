@@ -297,6 +297,8 @@ AC_ARG_ENABLE(pcreposix,
   AS_HELP_STRING([--enable-pcreposix], [enable using PCRE Posix libs for regex functions]))
 AC_ARG_ENABLE(fpm,
   AS_HELP_STRING([--enable-fpm], [enable Forwarding Plane Manager support]))
+AC_ARG_ENABLE(mpls,
+  AS_HELP_STRING([--enable-mpls], [enable MPLS support - requires compatible kernel]))
 AC_ARG_ENABLE(werror,
   AS_HELP_STRING([--enable-werror], [enable -Werror (recommended for developers only)]))
 
@@ -316,6 +318,10 @@ fi
 
 if test "${enable_fpm}" = "yes"; then
    AC_DEFINE(HAVE_FPM,,Forwarding Plane Manager support)
+fi
+
+if test "${enable_mpls}" = "yes" ; then
+  AC_DEFINE(HAVE_MPLS,,Compile MPLS support in)
 fi
 
 if test "${enable_tcp_zebra}" = "yes"; then

@@ -30,6 +30,9 @@ unsigned long zebra_debug_packet;
 unsigned long zebra_debug_kernel;
 unsigned long zebra_debug_rib;
 unsigned long zebra_debug_fpm;
+#if defined(HAVE_MPLS)
+unsigned long zebra_debug_mpls;
+#endif
 
 DEFUN (show_debugging_zebra,
        show_debugging_zebra_cmd,
@@ -74,6 +77,10 @@ DEFUN (show_debugging_zebra,
 
   if (IS_ZEBRA_DEBUG_FPM)
     vty_out (vty, "  Zebra FPM debugging is on%s", VTY_NEWLINE);
+#if defined(HAVE_MPLS)
+  if (IS_ZEBRA_DEBUG_MPLS)
+    vty_out (vty, "  Zebra MPLS debugging is on%s", VTY_NEWLINE);
+#endif
 
   return CMD_SUCCESS;
 }
@@ -88,6 +95,19 @@ DEFUN (debug_zebra_events,
   zebra_debug_event = ZEBRA_DEBUG_EVENT;
   return CMD_WARNING;
 }
+
+#if defined(HAVE_MPLS)
+DEFUN (debug_zebra_mpls,
+       debug_zebra_mpls_cmd,
+       "debug zebra mpls",
+       DEBUG_STR
+       "Zebra configuration\n"
+       "Debug option set for zebra MPLS LSPs\n")
+{
+  zebra_debug_mpls = ZEBRA_DEBUG_MPLS;
+  return CMD_WARNING;
+}
+#endif
 
 DEFUN (debug_zebra_packet,
        debug_zebra_packet_cmd,
@@ -196,6 +216,20 @@ DEFUN (no_debug_zebra_events,
   zebra_debug_event = 0;
   return CMD_SUCCESS;
 }
+
+#if defined(HAVE_MPLS)
+DEFUN (no_debug_zebra_mpls,
+       no_debug_zebra_mpls_cmd,
+       "no debug zebra mpls",
+       NO_STR
+       DEBUG_STR
+       "Zebra configuration\n"
+       "Debug option set for zebra MPLS LSPs\n")
+{
+  zebra_debug_mpls = 0;
+  return CMD_SUCCESS;
+}
+#endif
 
 DEFUN (no_debug_zebra_packet,
        no_debug_zebra_packet_cmd,
@@ -335,6 +369,13 @@ config_write_debug (struct vty *vty)
       vty_out (vty, "debug zebra fpm%s", VTY_NEWLINE);
       write++;
     }
+#if defined(HAVE_MPLS)
+  if (IS_ZEBRA_DEBUG_MPLS)
+    {
+      vty_out (vty, "debug zebra mpls%s", VTY_NEWLINE);
+      write++;
+    }
+#endif
   return write;
 }
 
@@ -346,6 +387,9 @@ zebra_debug_init (void)
   zebra_debug_kernel = 0;
   zebra_debug_rib = 0;
   zebra_debug_fpm = 0;
+#if defined(HAVE_MPLS)
+  zebra_debug_mpls = 0;
+#endif
 
   install_node (&debug_node, config_write_debug);
 
@@ -353,6 +397,9 @@ zebra_debug_init (void)
 
   install_element (ENABLE_NODE, &show_debugging_zebra_cmd);
   install_element (ENABLE_NODE, &debug_zebra_events_cmd);
+#if defined(HAVE_MPLS)
+  install_element (ENABLE_NODE, &debug_zebra_mpls_cmd);
+#endif
   install_element (ENABLE_NODE, &debug_zebra_packet_cmd);
   install_element (ENABLE_NODE, &debug_zebra_packet_direct_cmd);
   install_element (ENABLE_NODE, &debug_zebra_packet_detail_cmd);
@@ -361,6 +408,9 @@ zebra_debug_init (void)
   install_element (ENABLE_NODE, &debug_zebra_rib_q_cmd);
   install_element (ENABLE_NODE, &debug_zebra_fpm_cmd);
   install_element (ENABLE_NODE, &no_debug_zebra_events_cmd);
+#if defined(HAVE_MPLS)
+  install_element (ENABLE_NODE, &no_debug_zebra_mpls_cmd);
+#endif
   install_element (ENABLE_NODE, &no_debug_zebra_packet_cmd);
   install_element (ENABLE_NODE, &no_debug_zebra_kernel_cmd);
   install_element (ENABLE_NODE, &no_debug_zebra_rib_cmd);
@@ -368,6 +418,9 @@ zebra_debug_init (void)
   install_element (ENABLE_NODE, &no_debug_zebra_fpm_cmd);
 
   install_element (CONFIG_NODE, &debug_zebra_events_cmd);
+#if defined(HAVE_MPLS)
+  install_element (CONFIG_NODE, &debug_zebra_mpls_cmd);
+#endif
   install_element (CONFIG_NODE, &debug_zebra_packet_cmd);
   install_element (CONFIG_NODE, &debug_zebra_packet_direct_cmd);
   install_element (CONFIG_NODE, &debug_zebra_packet_detail_cmd);
@@ -376,6 +429,9 @@ zebra_debug_init (void)
   install_element (CONFIG_NODE, &debug_zebra_rib_q_cmd);
   install_element (CONFIG_NODE, &debug_zebra_fpm_cmd);
   install_element (CONFIG_NODE, &no_debug_zebra_events_cmd);
+#if defined(HAVE_MPLS)
+  install_element (CONFIG_NODE, &no_debug_zebra_mpls_cmd);
+#endif
   install_element (CONFIG_NODE, &no_debug_zebra_packet_cmd);
   install_element (CONFIG_NODE, &no_debug_zebra_kernel_cmd);
   install_element (CONFIG_NODE, &no_debug_zebra_rib_cmd);

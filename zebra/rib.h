@@ -27,6 +27,9 @@
 #include "prefix.h"
 #include "table.h"
 #include "queue.h"
+#if defined(HAVE_MPLS)
+#include "mpls.h"
+#endif
 
 #define DISTANCE_INFINITY  255
 
@@ -173,6 +176,17 @@ typedef struct rib_dest_t_
 #define RNODE_FOREACH_RIB_SAFE(rn, rib, next)				\
   RIB_DEST_FOREACH_ROUTE_SAFE (rib_dest_from_rnode (rn), rib, next)
 
+
+#if defined(HAVE_MPLS)
+/* Static route label information */
+struct static_nh_label
+{
+  u_int8_t num_labels;
+  u_int8_t reserved[3];
+  mpls_label_t label[2];
+};
+#endif
+
 /* Static route information. */
 struct static_route
 {
@@ -205,6 +219,11 @@ struct static_route
  see ZEBRA_FLAG_REJECT
      ZEBRA_FLAG_BLACKHOLE
  */
+
+#if defined(HAVE_MPLS)
+  /* Label information */
+  struct static_nh_label snh_label;
+#endif
 };
 
 enum nexthop_types_t
@@ -219,6 +238,16 @@ enum nexthop_types_t
   NEXTHOP_TYPE_IPV6_IFNAME,      /* IPv6 nexthop with ifname.  */
   NEXTHOP_TYPE_BLACKHOLE,        /* Null0 nexthop.  */
 };
+
+#if defined(HAVE_MPLS)
+/* Nexthop label structure. */
+struct nexthop_label
+{
+  u_int8_t num_labels;
+  u_int8_t reserved[3];
+  mpls_label_t label[0]; /* 1 or more labels. */
+};
+#endif
 
 /* Nexthop structure. */
 struct nexthop
@@ -249,6 +278,11 @@ struct nexthop
    * obtained by recursive resolution will be added to `resolved'.
    * Only one level of recursive resolution is currently supported. */
   struct nexthop *resolved;
+
+#if defined(HAVE_MPLS)
+  /* Label(s) associated with this nexthop. */
+  struct nexthop_label *nh_label;
+#endif
 };
 
 /* The following for loop allows to iterate over the nexthop
@@ -370,6 +404,18 @@ struct zebra_vrf
 #if defined (HAVE_RTADV)
   struct rtadv rtadv;
 #endif /* HAVE_RTADV */
+
+#if defined(HAVE_MPLS)
+  /* MPLS static LSP config table */
+  struct hash *slsp_table;
+
+  /* MPLS label forwarding table */
+  struct hash *lsp_table;
+
+  /* MPLS processing flags */
+  u_int16_t mpls_flags;
+#define MPLS_FLAG_SCHEDULE_LSPS    (1 << 0)
+#endif
 };
 
 /*
@@ -425,6 +471,7 @@ extern void multicast_mode_ipv4_set (enum multicast_mode mode);
 extern enum multicast_mode multicast_mode_ipv4_get (void);
 
 extern const char *nexthop_type_to_str (enum nexthop_types_t nh_type);
+extern void nexthop_free (struct nexthop *);
 extern struct nexthop *nexthop_ifindex_add (struct rib *, ifindex_t);
 extern struct nexthop *nexthop_ifname_add (struct rib *, char *);
 extern struct nexthop *nexthop_blackhole_add (struct rib *);
@@ -434,6 +481,10 @@ extern struct nexthop *nexthop_ipv4_ifindex_add (struct rib *,
                                                  struct in_addr *,
                                                  struct in_addr *,
                                                  ifindex_t);
+#if defined(HAVE_MPLS)
+extern void nexthop_add_labels (struct nexthop *, u_int8_t, mpls_label_t *);
+extern void nexthop_del_labels (struct nexthop *);
+#endif
 extern int nexthop_has_fib_child(struct nexthop *);
 extern void rib_lookup_and_dump (struct prefix_ipv4 *);
 extern void rib_lookup_and_pushup (struct prefix_ipv4 *);
@@ -485,6 +536,16 @@ extern void rib_close (void);
 extern void rib_init (void);
 extern unsigned long rib_score_proto (u_char proto);
 
+#if defined(HAVE_MPLS)
+extern int
+static_add_ipv4_safi (safi_t safi, struct prefix *p, struct in_addr *gate,
+		      const char *ifname, u_char flags, u_char distance,
+		      vrf_id_t vrf_id, struct static_nh_label *snh_label);
+extern int
+static_delete_ipv4_safi (safi_t safi, struct prefix *p, struct in_addr *gate,
+			 const char *ifname, u_char distance, vrf_id_t vrf_id,
+			 struct static_nh_label *snh_label);
+#else
 extern int
 static_add_ipv4_safi (safi_t safi, struct prefix *p, struct in_addr *gate,
 		      const char *ifname, u_char flags, u_char distance,
@@ -492,6 +553,7 @@ static_add_ipv4_safi (safi_t safi, struct prefix *p, struct in_addr *gate,
 extern int
 static_delete_ipv4_safi (safi_t safi, struct prefix *p, struct in_addr *gate,
 			 const char *ifname, u_char distance, vrf_id_t vrf_id);
+#endif
 
 extern int
 rib_add_ipv6 (int type, int flags, struct prefix_ipv6 *p,
@@ -509,6 +571,17 @@ extern struct rib *rib_match_ipv6 (struct in6_addr *, vrf_id_t);
 
 extern struct route_table *rib_table_ipv6;
 
+#if defined(HAVE_MPLS)
+extern int
+static_add_ipv6 (struct prefix *p, u_char type, struct in6_addr *gate,
+		 const char *ifname, u_char flags, u_char distance,
+		 vrf_id_t vrf_id, struct static_nh_label *snh_label);
+
+extern int
+static_delete_ipv6 (struct prefix *p, u_char type, struct in6_addr *gate,
+		    const char *ifname, u_char distance, vrf_id_t vrf_id,
+		    struct static_nh_label *snh_label);
+#else
 extern int
 static_add_ipv6 (struct prefix *p, u_char type, struct in6_addr *gate,
 		 const char *ifname, u_char flags, u_char distance,
@@ -517,9 +590,14 @@ static_add_ipv6 (struct prefix *p, u_char type, struct in6_addr *gate,
 extern int
 static_delete_ipv6 (struct prefix *p, u_char type, struct in6_addr *gate,
 		    const char *ifname, u_char distance, vrf_id_t vrf_id);
+#endif
 
 extern int rib_gc_dest (struct route_node *rn);
 extern struct route_table *rib_tables_iter_next (rib_tables_iter_t *iter);
+
+#if defined(HAVE_MPLS)
+extern u_char route_distance(int type);
+#endif
 
 /*
  * Inline functions.
